@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Interno — Lerner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:    #071A57;
+    --blue:    #103FD5;
+    --sky:     #67BAE4;
+    --light:   #f4f4f4;
+    --white:   #ffffff;
+    --bg:      #050f36;
+    --surface: #071A57;
+    --surface2:#0c2268;
+    --surface3:#0f2d80;
+    --border:  rgba(103,186,228,0.15);
+    --border2: rgba(103,186,228,0.28);
+    --text:    #f4f4f4;
+    --text-muted:#8fafd4;
+    --text-dim:  #c5d8ee;
+    --green:  #34d399;
+    --yellow: #fbbf24;
+    --red:    #f87171;
+    --radius: 8px;
+    --font: 'Poppins', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; min-height: 100vh; }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(160deg, #071A57 0%, #103FD5 100%);
+  }
+  .login-box {
+    width: 380px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(103,186,228,0.25);
+    border-radius: 16px;
+    padding: 48px 40px;
+    backdrop-filter: blur(12px);
+  }
+  .login-logo { font-size: 30px; font-weight: 700; color: var(--white); letter-spacing: 2px; margin-bottom: 2px; }
+  .login-logo span { color: var(--sky); }
+  .login-sub { font-size: 11px; font-weight: 300; color: rgba(244,244,244,0.5); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 36px; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 11px; font-weight: 500; color: var(--sky); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(103,186,228,0.25);
+    border-radius: var(--radius); color: var(--text); font-family: var(--font); font-size: 13px;
+    font-weight: 400; padding: 11px 14px; outline: none; transition: border-color 0.2s, background 0.2s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--sky); background: rgba(255,255,255,0.1); }
+  .field input::placeholder { color: rgba(244,244,244,0.3); }
+  .field textarea { resize: vertical; min-height: 72px; }
+  .field select option { background: var(--surface2); color: var(--text); }
+
+  .btn {
+    width: 100%; padding: 12px;
+    background: linear-gradient(135deg, #103FD5, #67BAE4);
+    color: var(--white); border: none; border-radius: var(--radius);
+    font-family: var(--font); font-weight: 600; font-size: 14px; letter-spacing: 0.5px;
+    cursor: pointer; transition: opacity 0.15s, transform 0.1s; margin-top: 8px;
+  }
+  .btn:hover { opacity: 0.9; } .btn:active { transform: scale(0.99); } .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-sm { width: auto; padding: 7px 16px; font-size: 12px; font-weight: 500; border-radius: 6px; margin-top: 0; }
+  .btn-outline { background: transparent; color: var(--text-dim); border: 1px solid var(--border2); }
+  .btn-outline:hover { border-color: var(--sky); color: var(--sky); opacity: 1; }
+  .btn-danger  { background: var(--red); color: white; }
+  .btn-success { background: var(--green); color: #082e1c; }
+
+  .error-msg {
+    background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.35);
+    color: var(--red); padding: 10px 14px; border-radius: var(--radius);
+    font-size: 12px; margin-top: 12px; display: none;
+  }
+
+  /* ── SIDEBAR ── */
+  #app { display: none; min-height: 100vh; }
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 230px;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; z-index: 10;
+  }
+  .sidebar-header {
+    padding: 28px 22px 22px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(160deg, #071A57 0%, #103FD5 100%);
+  }
+  .sidebar-logo { font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: 2px; }
+  .sidebar-logo span { color: var(--sky); }
+  .sidebar-sub { font-size: 10px; font-weight: 300; color: rgba(244,244,244,0.5); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+  .sidebar-nav { padding: 18px 12px; flex: 1; }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--sky); letter-spacing: 2px; text-transform: uppercase; padding: 0 10px; margin-bottom: 6px; margin-top: 18px; }
+  .nav-label:first-child { margin-top: 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: var(--radius); cursor: pointer; color: var(--text-dim);
+    font-size: 13px; font-weight: 400; transition: all 0.15s; margin-bottom: 2px;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--white); }
+  .nav-item.active {
+    background: linear-gradient(135deg, rgba(16,63,213,0.55), rgba(103,186,228,0.18));
+    color: var(--white); font-weight: 500; border-color: rgba(103,186,228,0.2);
+  }
+  .nav-badge {
+    margin-left: auto; background: var(--yellow); color: #1a0e00;
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; text-align: center;
+  }
+  .sidebar-footer { padding: 16px 12px; border-top: 1px solid var(--border); }
+  .user-info {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    border-radius: var(--radius); background: var(--surface2); margin-bottom: 10px;
+  }
+  .user-avatar {
+    width: 34px; height: 34px; background: linear-gradient(135deg, #103FD5, #67BAE4);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-rol  { font-size: 10px; color: var(--sky); text-transform: uppercase; letter-spacing: 1px; font-weight: 300; }
+  .logout-btn {
+    width: 100%; padding: 9px; background: transparent; border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text-muted); font-family: var(--font);
+    font-size: 12px; cursor: pointer; transition: all 0.15s;
+  }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── CONTENT ── */
+  .main-content { margin-left: 230px; min-height: 100vh; }
+  .page { display: none; padding: 36px; }
+  .page.active { display: block; }
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-size: 24px; font-weight: 600; color: var(--white); margin-bottom: 4px; }
+  .page-sub { font-size: 12px; font-weight: 300; color: var(--text-muted); }
+
+  /* ── STATS ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 22px; position: relative; overflow: hidden;
+  }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .stat-card.s-pending::before  { background: var(--yellow); }
+  .stat-card.s-active::before   { background: var(--green); }
+  .stat-card.s-rejected::before { background: var(--red); }
+  .stat-card.s-total::before    { background: linear-gradient(90deg, #103FD5, #67BAE4); }
+  .stat-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+  .stat-value { font-size: 32px; font-weight: 700; line-height: 1; }
+  .stat-value.sv-pending  { color: var(--yellow); }
+  .stat-value.sv-active   { color: var(--green); }
+  .stat-value.sv-rejected { color: var(--red); }
+  .stat-value.sv-total    { color: var(--sky); }
+
+  /* ── FILTERS ── */
+  .filters-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+  .filter-group { display: flex; border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; }
+  .filter-btn {
+    padding: 8px 18px; background: transparent; border: none;
+    border-right: 1px solid var(--border2); color: var(--text-muted);
+    font-family: var(--font); font-size: 12px; cursor: pointer; transition: all 0.15s;
+  }
+  .filter-btn:last-child { border-right: none; }
+  .filter-btn:hover { background: var(--surface2); color: var(--white); }
+  .filter-btn.active { background: var(--blue); color: var(--white); font-weight: 500; }
+  .search-input {
+    flex: 1; min-width: 200px; max-width: 340px;
+    background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
+    color: var(--text); font-family: var(--font); font-size: 12px; padding: 8px 14px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--sky); }
+  .search-input::placeholder { color: var(--text-muted); }
+  .tipo-select {
+    background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
+    color: var(--text); font-family: var(--font); font-size: 12px; padding: 8px 14px; outline: none; cursor: pointer;
+  }
+
+  /* ── TABLE ── */
+  .table-container { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border2); background: var(--surface2); }
+  th { padding: 12px 18px; text-align: left; font-size: 10px; font-weight: 600; color: var(--sky); letter-spacing: 2px; text-transform: uppercase; }
+  tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(103,186,228,0.06); }
+  td { padding: 14px 18px; font-size: 13px; font-weight: 300; color: var(--text-dim); }
+  td.primary { color: var(--white); font-weight: 500; }
+
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+  .badge-pendiente { background: rgba(251,191,36,0.15);  color: var(--yellow); border: 1px solid rgba(251,191,36,0.3); }
+  .badge-activa    { background: rgba(52,211,153,0.12);  color: var(--green);  border: 1px solid rgba(52,211,153,0.3); }
+  .badge-rechazada { background: rgba(248,113,113,0.12); color: var(--red);    border: 1px solid rgba(248,113,113,0.3); }
+  .badge-fisica    { background: rgba(103,186,228,0.12); color: var(--sky);    border: 1px solid rgba(103,186,228,0.25); }
+  .badge-juridica  { background: rgba(16,63,213,0.25);   color: #a0bfff;       border: 1px solid rgba(16,63,213,0.4); }
+
+  .empty-state { text-align: center; padding: 70px 20px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+  .empty-state p { font-size: 13px; font-weight: 300; }
+
+  .pagination { display: flex; gap: 6px; align-items: center; justify-content: flex-end; padding: 14px 18px; border-top: 1px solid var(--border); }
+  .page-btn { padding: 6px 13px; background: transparent; border: 1px solid var(--border2); border-radius: 6px; color: var(--text-dim); font-family: var(--font); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .page-btn:hover { background: var(--surface2); }
+  .page-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(5,15,54,0.85); z-index: 100;
+    backdrop-filter: blur(3px); overflow-y: auto; padding: 40px 20px;
+  }
+  .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; width: 100%; max-width: 780px; overflow: hidden; }
+  .modal-header {
+    padding: 24px 30px 20px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--surface2) 0%, #0a2470 100%);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  }
+  .modal-title { font-size: 19px; font-weight: 600; color: var(--white); margin-bottom: 3px; }
+  .modal-ref { font-size: 11px; font-weight: 300; color: var(--sky); letter-spacing: 0.5px; }
+  .modal-close {
+    background: rgba(255,255,255,0.1); border: none; color: var(--text-dim);
+    font-size: 18px; cursor: pointer; padding: 4px 8px; line-height: 1; border-radius: 6px; transition: all 0.15s;
+  }
+  .modal-close:hover { background: rgba(248,113,113,0.2); color: var(--red); }
+  .modal-body { padding: 26px 30px; }
+
+  .section-title { font-size: 10px; font-weight: 600; color: var(--sky); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px; margin-bottom: 24px; }
+  .data-item label { display: block; font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+  .data-item span { font-size: 13px; font-weight: 400; color: var(--text); }
+
+  .images-row { display: flex; gap: 12px; margin-bottom: 24px; }
+  .img-card { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; min-height: 160px; position: relative; }
+  .img-card-label { position: absolute; top: 8px; left: 8px; background: rgba(7,26,87,0.9); color: var(--sky); font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 4px; letter-spacing: 1px; text-transform: uppercase; z-index: 2; }
+  .img-card img { width: 100%; height: 160px; object-fit: cover; display: block; cursor: pointer; transition: opacity 0.15s; }
+  .img-card img:hover { opacity: 0.8; }
+  .img-placeholder { display: flex; align-items: center; justify-content: center; height: 160px; color: var(--text-muted); font-size: 12px; font-weight: 300; flex-direction: column; gap: 8px; }
+
+  .status-section { background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 20px 22px; margin-top: 8px; }
+  .status-current-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .status-current-label { font-size: 12px; font-weight: 300; color: var(--text-muted); }
+  .status-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .status-row .field { flex: 1; min-width: 150px; margin-bottom: 0; }
+
+  /* ── USUARIOS ── */
+  .users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+  .user-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+  .user-card-header { display: flex; align-items: center; gap: 12px; }
+  .user-card-avatar { width: 42px; height: 42px; background: linear-gradient(135deg, #103FD5, #67BAE4); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; color: white; }
+  .user-card-info { flex: 1; }
+  .user-card-name  { font-size: 15px; font-weight: 600; }
+  .user-card-email { font-size: 11px; font-weight: 300; color: var(--text-muted); }
+  .user-card-meta  { font-size: 11px; font-weight: 300; color: var(--text-muted); }
+  .user-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .add-user-section { background: var(--surface); border: 1px solid var(--border2); border-radius: 10px; padding: 24px; margin-bottom: 24px; display: none; }
+  .add-user-section.open { display: block; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+  .form-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+  /* ── LOG ── */
+  .log-list { display: flex; flex-direction: column; gap: 8px; }
+  .log-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; display: flex; align-items: flex-start; gap: 14px; }
+  .log-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .log-info { flex: 1; }
+  .log-main { font-size: 13px; font-weight: 400; color: var(--text); line-height: 1.5; }
+  .log-sub  { font-size: 11px; font-weight: 300; color: var(--text-muted); margin-top: 3px; }
+  .log-time { font-size: 11px; font-weight: 300; color: var(--text-muted); white-space: nowrap; }
+
+  /* ── TOAST ── */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 13px 18px; font-size: 13px; color: var(--text); min-width: 240px; animation: slideIn 0.2s ease; display: flex; align-items: center; gap: 10px; font-weight: 400; }
+  .toast.success { border-color: rgba(52,211,153,0.4); }
+  .toast.error   { border-color: rgba(248,113,113,0.4); }
+  @keyframes slideIn { from { transform: translateX(16px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  .spinner { width: 22px; height: 22px; border: 2px solid var(--border2); border-top-color: var(--sky); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-row td { text-align: center; padding: 50px; color: var(--text-muted); }
+
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .data-grid  { grid-template-columns: 1fr; }
+    .form-grid  { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">LERNER<span>.</span></div>
+    <div class="login-sub">Panel Interno · Aperturas</div>
+    <div class="field"><label>Usuario</label><input type="text" id="login-user" placeholder="Ingresá tu usuario" autocomplete="username"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn" id="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="error-msg" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">LERNER<span>.</span></div>
+      <div class="sidebar-sub">Panel Interno</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Solicitudes</div>
+      <div class="nav-item active" onclick="showPage('solicitudes')" id="nav-solicitudes">
+        📋 Solicitudes
+        <span class="nav-badge" id="badge-pendiente" style="display:none">0</span>
+      </div>
+      <div class="nav-label">Sistema</div>
+      <div class="nav-item" onclick="showPage('log')" id="nav-log">📝 Registro de cambios</div>
+      <div class="nav-item admin-only" onclick="showPage('usuarios')" id="nav-usuarios" style="display:none">👥 Usuarios</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="avatar-initials">?</div>
+        <div>
+          <div class="user-name" id="sidebar-username">–</div>
+          <div class="user-rol"  id="sidebar-rol">–</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- SOLICITUDES -->
+    <div class="page active" id="page-solicitudes">
+      <div class="page-header">
+        <div class="page-title">Solicitudes de apertura</div>
+        <div class="page-sub">Gestioná y actualizá el estado de las cuentas.</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card s-pending"><div class="stat-label">Pendientes</div><div class="stat-value sv-pending" id="stat-pendiente">–</div></div>
+        <div class="stat-card s-active"><div class="stat-label">Activas</div><div class="stat-value sv-active" id="stat-activa">–</div></div>
+        <div class="stat-card s-rejected"><div class="stat-label">Rechazadas</div><div class="stat-value sv-rejected" id="stat-rechazada">–</div></div>
+        <div class="stat-card s-total"><div class="stat-label">Total</div><div class="stat-value sv-total" id="stat-total">–</div></div>
+      </div>
+      <div class="filters-bar">
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="setFiltro('todos',this)">Todos</button>
+          <button class="filter-btn" onclick="setFiltro('pendiente',this)">Pendiente</button>
+          <button class="filter-btn" onclick="setFiltro('activa',this)">Activa</button>
+          <button class="filter-btn" onclick="setFiltro('rechazada',this)">Rechazada</button>
+        </div>
+        <select class="tipo-select" id="filtro-tipo" onchange="applyFilters()">
+          <option value="todos">Físicas + Jurídicas</option>
+          <option value="fisica">Solo Personas Físicas</option>
+          <option value="juridica">Solo Personas Jurídicas</option>
+        </select>
+        <input class="search-input" type="text" id="search-input" placeholder="Buscar por nombre, DNI, referencia..." oninput="applyFilters()">
+        <button class="btn btn-sm btn-outline" onclick="loadSolicitudes()">↺ Actualizar</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>N° Ref.</th><th>Titular</th><th>Tipo</th><th>DNI / CUIT</th><th>Fecha</th><th>Estado</th></tr></thead>
+          <tbody id="solicitudes-tbody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="page" id="page-log">
+      <div class="page-header"><div class="page-title">Registro de cambios</div><div class="page-sub">Historial de actualizaciones de estado realizadas por el equipo.</div></div>
+      <div class="log-list" id="log-list"><div style="text-align:center;padding:40px"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- USUARIOS -->
+    <div class="page" id="page-usuarios">
+      <div class="page-header"><div class="page-title">Gestión de usuarios</div><div class="page-sub">Administrá quién puede ingresar al panel interno.</div></div>
+      <button class="btn btn-sm" style="margin-bottom:18px" onclick="toggleAddUser()">+ Agregar usuario</button>
+      <div class="add-user-section" id="add-user-section">
+        <div class="section-title">Nuevo usuario</div>
+        <div class="form-grid">
+          <div class="field"><label>Nombre de usuario</label><input type="text" id="nu-username" placeholder="pepe.garcia"></div>
+          <div class="field"><label>Email</label><input type="email" id="nu-email" placeholder="pepe@lerner.com.ar"></div>
+          <div class="field"><label>Contraseña inicial</label><input type="password" id="nu-pass" placeholder="Mínimo 8 caracteres"></div>
+          <div class="field"><label>Rol</label><select id="nu-rol"><option value="operador">Operador</option><option value="admin">Administrador</option></select></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-sm btn-success" onclick="createUser()">Crear usuario</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleAddUser()">Cancelar</button>
+        </div>
+        <div class="error-msg" id="user-error"></div>
+      </div>
+      <div class="users-grid" id="users-grid"><div class="spinner"></div></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOnBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title" id="modal-title">–</div><div class="modal-ref" id="modal-ref">–</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"><div style="text-align:center;padding:40px"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const SUPA_URL = 'https://lltzdlqztscbjerkglcj.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsdHpkbHF6dHNjYmplcmtnbGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjE4OTEsImV4cCI6MjA4NTc5Nzg5MX0.6FuvJfDphmMk-ab1JDmWzQ0ZM5W4CNlczTdPK9SuLLg';
+const PAGE_SIZE = 25;
+
+let currentUser = null, allSolicitudes = [], filteredSolicitudes = [], currentPage = 1, filtroEstado = 'todos';
+
+async function supaFetch(path, options = {}) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation', ...options.headers },
+    ...options
+  });
+  const text = await res.text();
+  if (!res.ok) { const e = text ? JSON.parse(text) : {}; throw new Error(e.message || `HTTP ${res.status}`); }
+  return text ? JSON.parse(text) : [];
+}
+
+async function rpc(fn, body = {}) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || `RPC ${res.status}`);
+  return text ? JSON.parse(text) : null;
+}
+
+// AUTH
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.style.display = 'none';
+  if (!username || !pass) { showLoginError('Completá usuario y contraseña.'); return; }
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  try {
+    const rows = await supaFetch(`internal_users?username=eq.${encodeURIComponent(username)}&activo=eq.true&select=id,username,email,rol,password_hash`);
+    if (!rows.length) { showLoginError('Usuario o contraseña incorrectos.'); return; }
+    const user = rows[0];
+    const ok = await rpc('verify_password', { plain: pass, hashed: user.password_hash });
+    if (!ok) { showLoginError('Usuario o contraseña incorrectos.'); return; }
+    await supaFetch(`internal_users?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ ultimo_acceso: new Date().toISOString() }) }).catch(() => {});
+    currentUser = { id: user.id, username: user.username, email: user.email, rol: user.rol };
+    sessionStorage.setItem('lerner_session', JSON.stringify(currentUser));
+    initApp();
+  } catch(e) { showLoginError('Error de conexión. Intentá de nuevo.'); console.error(e); }
+  finally { btn.disabled = false; btn.textContent = 'Ingresar'; }
+}
+
+function showLoginError(msg) { const el = document.getElementById('login-error'); el.textContent = msg; el.style.display = 'block'; }
+
+function doLogout() {
+  sessionStorage.removeItem('lerner_session'); currentUser = null; allSolicitudes = [];
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function initApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('sidebar-username').textContent = currentUser.username;
+  document.getElementById('sidebar-rol').textContent = currentUser.rol;
+  document.getElementById('avatar-initials').textContent = currentUser.username.charAt(0).toUpperCase();
+  if (currentUser.rol === 'admin') document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+  loadSolicitudes();
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'log') loadLog();
+  if (name === 'usuarios') loadUsuarios();
+}
+
+// SOLICITUDES
+async function loadSolicitudes() {
+  const tbody = document.getElementById('solicitudes-tbody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  try {
+    const [fisicas, juridicas] = await Promise.all([
+      supaFetch('solicitudes_fisica?select=id,numero_referencia,nombre,apellido,dni,estado,created_at&order=created_at.desc'),
+      supaFetch('solicitudes_juridica?select=id,numero_referencia,razon_social,cuit,estado,created_at&order=created_at.desc')
+    ]);
+    allSolicitudes = [
+      ...fisicas.map(r => ({ ...r, tipo: 'fisica', titular: `${r.nombre||''} ${r.apellido||''}`.trim(), doc: r.dni })),
+      ...juridicas.map(r => ({ ...r, tipo: 'juridica', titular: r.razon_social || '', doc: r.cuit }))
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    updateStats();
+    applyFilters();
+  } catch(e) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="6" style="color:var(--red)">Error al cargar: ${e.message}</td></tr>`;
+    console.error(e);
+  }
+}
+
+function updateStats() {
+  const c = { pendiente: 0, activa: 0, rechazada: 0 };
+  allSolicitudes.forEach(s => { const e = (s.estado || 'pendiente').toLowerCase(); if (c[e] !== undefined) c[e]++; });
+  document.getElementById('stat-pendiente').textContent = c.pendiente;
+  document.getElementById('stat-activa').textContent    = c.activa;
+  document.getElementById('stat-rechazada').textContent = c.rechazada;
+  document.getElementById('stat-total').textContent     = allSolicitudes.length;
+  const b = document.getElementById('badge-pendiente');
+  b.textContent = c.pendiente; b.style.display = c.pendiente > 0 ? 'inline-block' : 'none';
+}
+
+function setFiltro(estado, btn) {
+  filtroEstado = estado;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); currentPage = 1; applyFilters();
+}
+
+function applyFilters() {
+  const search = document.getElementById('search-input').value.toLowerCase().trim();
+  const tipo   = document.getElementById('filtro-tipo').value;
+  filteredSolicitudes = allSolicitudes.filter(s => {
+    if (filtroEstado !== 'todos' && (s.estado || 'pendiente').toLowerCase() !== filtroEstado) return false;
+    if (tipo !== 'todos' && s.tipo !== tipo) return false;
+    if (search && !`${s.titular} ${s.doc} ${s.numero_referencia||''}`.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  currentPage = 1; renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('solicitudes-tbody');
+  const items = filteredSolicitudes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">📋</div><p>No hay solicitudes que coincidan con los filtros.</p></div></td></tr>`;
+    renderPagination(); return;
+  }
+  tbody.innerHTML = items.map(s => `
+    <tr onclick="openModal('${s.id}','${s.tipo}')">
+      <td>${esc(s.numero_referencia)||'—'}</td>
+      <td class="primary">${esc(s.titular)}</td>
+      <td><span class="badge badge-${s.tipo}">${s.tipo==='fisica'?'Física':'Jurídica'}</span></td>
+      <td>${esc(s.doc)||'—'}</td>
+      <td>${formatDate(s.created_at)}</td>
+      <td><span class="badge badge-${(s.estado||'pendiente').toLowerCase()}">${s.estado||'pendiente'}</span></td>
+    </tr>`).join('');
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = Math.ceil(filteredSolicitudes.length / PAGE_SIZE);
+  const el = document.getElementById('pagination');
+  if (total <= 1) { el.innerHTML = ''; return; }
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← Anterior</button>`;
+  for (let i = 1; i <= total; i++) {
+    if (i===1||i===total||Math.abs(i-currentPage)<=2) html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    else if (Math.abs(i-currentPage)===3) html += `<span style="color:var(--text-muted);padding:0 4px">…</span>`;
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}>Siguiente →</button>`;
+  el.innerHTML = html;
+}
+
+function goPage(p) { currentPage = p; renderTable(); }
+
+// MODAL
+async function openModal(id, tipo) {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('modal-body').innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner"></div></div>';
+  try {
+    const table = tipo==='fisica' ? 'solicitudes_fisica' : 'solicitudes_juridica';
+    const rows = await supaFetch(`${table}?id=eq.${id}&select=*`);
+    if (!rows.length) throw new Error('No encontrado');
+    const s = rows[0];
+    document.getElementById('modal-title').textContent = tipo==='fisica' ? `${s.nombre} ${s.apellido}` : s.razon_social;
+    document.getElementById('modal-ref').textContent   = `Ref: ${s.numero_referencia||'—'}  ·  Nro ID: ${s.nro_id||'—'}  ·  ${formatDate(s.created_at)}`;
+    document.getElementById('modal-body').innerHTML    = buildModalBody(s, tipo);
+  } catch(e) {
+    document.getElementById('modal-body').innerHTML = `<p style="color:var(--red)">Error: ${e.message}</p>`;
+  }
+}
+
+function buildModalBody(s, tipo) {
+  let fields = '';
+  if (tipo === 'fisica') {
+    fields = `
+      <div class="data-item"><label>Nombre completo</label><span>${esc(s.nombre)} ${esc(s.apellido)}</span></div>
+      <div class="data-item"><label>DNI</label><span>${esc(s.dni)}</span></div>
+      <div class="data-item"><label>Fecha de nacimiento</label><span>${s.fecha_nacimiento||'—'}</span></div>
+      <div class="data-item"><label>Email</label><span>${esc(s.email)}</span></div>
+      <div class="data-item"><label>Celular</label><span>${esc(s.celular)}</span></div>
+      <div class="data-item"><label>Dirección</label><span>${esc(s.calle)}${s.piso?', piso '+esc(s.piso):''} — ${esc(s.ciudad)}, ${esc(s.provincia)} (CP: ${esc(s.codigo_postal)})</span></div>
+      <div class="data-item"><label>Monto inversión</label><span>${s.monto_inversion?fmtMonto(s.monto_inversion,s.moneda):'—'}</span></div>
+      <div class="data-item"><label>Origen de fondos</label><span>${esc(s.origen_fondos)||'—'}</span></div>
+      <div class="data-item"><label>Es PEP</label><span>${(s.es_pep==='true'||s.es_pep===true)?'✅ Sí':'No'}</span></div>
+      <div class="data-item"><label>Sujeto obligado</label><span>${(s.es_sujeto_obligado==='true'||s.es_sujeto_obligado===true)?'✅ Sí':'No'}</span></div>
+      ${s.tiene_cotitular?`
+        <div class="data-item" style="grid-column:1/-1;margin-top:4px"><label>── Co-titular ──</label></div>
+        <div class="data-item"><label>Nombre</label><span>${esc(s.co_nombre)} ${esc(s.co_apellido)}</span></div>
+        <div class="data-item"><label>DNI</label><span>${esc(s.co_dni)||'—'}</span></div>
+        <div class="data-item"><label>Email</label><span>${esc(s.co_email)||'—'}</span></div>
+        <div class="data-item"><label>Celular</label><span>${esc(s.co_celular)||'—'}</span></div>`:''}
+      ${s.fue_referido?`
+        <div class="data-item"><label>Asesor referente</label><span>${esc(s.ref_nombre_asesor)||'—'} (cód: ${esc(s.ref_codigo_asesor)||'—'})</span></div>
+        <div class="data-item"><label>Canal</label><span>${esc(s.ref_canal)||'—'}</span></div>`:''}`;
+  } else {
+    fields = `
+      <div class="data-item"><label>Razón Social</label><span>${esc(s.razon_social)}</span></div>
+      <div class="data-item"><label>CUIT</label><span>${esc(s.cuit)}</span></div>
+      <div class="data-item"><label>Tipo de sociedad</label><span>${esc(s.tipo_sociedad)||'—'}</span></div>
+      <div class="data-item"><label>Fecha constitución</label><span>${s.fecha_constitucion||'—'}</span></div>
+      <div class="data-item"><label>Email</label><span>${esc(s.email)}</span></div>
+      <div class="data-item"><label>Celular</label><span>${esc(s.celular)}</span></div>
+      <div class="data-item"><label>Dirección</label><span>${esc(s.calle)}${s.piso?', piso '+esc(s.piso):''} — ${esc(s.ciudad)}, ${esc(s.provincia)} (CP: ${esc(s.codigo_postal)})</span></div>
+      <div class="data-item"><label>Monto inversión</label><span>${s.monto_inversion?fmtMonto(s.monto_inversion,s.moneda):'—'}</span></div>
+      <div class="data-item"><label>Es PEP</label><span>${(s.es_pep==='true'||s.es_pep===true)?'✅ Sí':'No'}</span></div>
+      <div class="data-item"><label>Sujeto obligado</label><span>${(s.es_sujeto_obligado==='true'||s.es_sujeto_obligado===true)?'✅ Sí':'No'}</span></div>
+      <div class="data-item" style="grid-column:1/-1;margin-top:4px"><label>── Representante Legal ──</label></div>
+      <div class="data-item"><label>Nombre</label><span>${esc(s.rep_legal_nombre)} ${esc(s.rep_legal_apellido)}</span></div>
+      <div class="data-item"><label>DNI</label><span>${esc(s.rep_legal_dni)||'—'}</span></div>
+      <div class="data-item"><label>Cargo</label><span>${esc(s.rep_legal_cargo)||'—'}</span></div>
+      <div class="data-item"><label>Email</label><span>${esc(s.rep_legal_email)||'—'}</span></div>
+      <div class="data-item"><label>Celular</label><span>${esc(s.rep_legal_celular)||'—'}</span></div>`;
+  }
+
+  const imgs = tipo==='fisica' ? `
+    <div class="section-title">Documentación</div>
+    <div class="images-row">
+      ${imgCard('DNI Frente',s.dni_frente_url)}${imgCard('DNI Dorso',s.dni_dorso_url)}${imgCard('Selfie',s.selfie_url)}
+    </div>` : '';
+
+  const est = (s.estado||'pendiente').toLowerCase();
+  return `
+    <div class="section-title">Datos del solicitante</div>
+    <div class="data-grid">${fields}</div>
+    ${imgs}
+    <div class="section-title">Estado de la cuenta</div>
+    <div class="status-section">
+      <div class="status-current-row">
+        <span class="status-current-label">Estado actual:</span>
+        <span class="badge badge-${est}">${s.estado||'pendiente'}</span>
+        ${s.nro_id?`<span style="margin-left:auto;font-size:11px;color:var(--text-muted)">Nro ID: ${s.nro_id}</span>`:''}
+      </div>
+      <div class="status-row">
+        <div class="field"><label>Cambiar a</label>
+          <select id="new-estado">
+            <option value="pendiente"  ${est==='pendiente' ?'selected':''}>Pendiente</option>
+            <option value="activa"     ${est==='activa'    ?'selected':''}>Activa</option>
+            <option value="rechazada"  ${est==='rechazada' ?'selected':''}>Rechazada</option>
+          </select>
+        </div>
+        <div class="field" style="flex:2"><label>Observaciones (opcional)</label><input type="text" id="obs-estado" placeholder="Motivo o comentario..."></div>
+        <button class="btn btn-sm btn-success" onclick="cambiarEstado('${s.id}','${tipo}','${est}')">Guardar cambio</button>
+      </div>
+    </div>`;
+}
+
+function imgCard(label, url) {
+  if (!url) return `<div class="img-card"><div class="img-card-label">${label}</div><div class="img-placeholder">📷<span>Sin imagen</span></div></div>`;
+  return `<div class="img-card"><div class="img-card-label">${label}</div><img src="${url}" alt="${label}" onclick="window.open('${url}','_blank')" title="Click para ampliar"></div>`;
+}
+
+async function cambiarEstado(id, tipo, estadoAnterior) {
+  const nuevoEstado = document.getElementById('new-estado').value;
+  const obs = (document.getElementById('obs-estado').value||'').trim();
+  if (nuevoEstado === estadoAnterior) { toast('El estado seleccionado ya es el actual.','error'); return; }
+  try {
+    const table = tipo==='fisica' ? 'solicitudes_fisica' : 'solicitudes_juridica';
+    await supaFetch(`${table}?id=eq.${id}`, { method:'PATCH', body: JSON.stringify({ estado: nuevoEstado }) });
+    await supaFetch('account_status_log', { method:'POST', body: JSON.stringify({
+      solicitud_id: id, tipo_solicitud: tipo, estado_anterior: estadoAnterior,
+      estado_nuevo: nuevoEstado, usuario_id: currentUser.id, username: currentUser.username,
+      observaciones: obs || null
+    })});
+    const idx = allSolicitudes.findIndex(s => s.id === id);
+    if (idx >= 0) allSolicitudes[idx].estado = nuevoEstado;
+    updateStats(); applyFilters();
+    toast(`Estado actualizado a "${nuevoEstado}"`, 'success');
+    closeModal();
+  } catch(e) { toast('Error al guardar: ' + e.message, 'error'); }
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalOnBg(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+// LOG
+async function loadLog() {
+  const el = document.getElementById('log-list');
+  el.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner"></div></div>';
+  try {
+    const rows = await supaFetch('account_status_log?order=created_at.desc&limit=150');
+    if (!rows.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>No hay cambios registrados aún.</p></div>'; return; }
+    const colors = { activa:'var(--green)', pendiente:'var(--yellow)', rechazada:'var(--red)' };
+    el.innerHTML = rows.map(r => `
+      <div class="log-item">
+        <div class="log-dot" style="background:${colors[r.estado_nuevo]||'var(--text-muted)'}"></div>
+        <div class="log-info">
+          <div class="log-main"><strong>${esc(r.username)}</strong> cambió el estado
+            <span class="badge badge-${r.estado_anterior}">${r.estado_anterior}</span> →
+            <span class="badge badge-${r.estado_nuevo}">${r.estado_nuevo}</span>
+            <span style="color:var(--text-muted);font-size:11px;font-weight:300"> · ${r.tipo_solicitud}</span>
+          </div>
+          ${r.observaciones?`<div class="log-sub">💬 ${esc(r.observaciones)}</div>`:''}
+          <div class="log-sub" style="margin-top:2px">ID: ${r.solicitud_id}</div>
+        </div>
+        <div class="log-time">${formatDate(r.created_at,true)}</div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<p style="color:var(--red)">Error: ${e.message}</p>`; }
+}
+
+// USUARIOS
+async function loadUsuarios() {
+  const grid = document.getElementById('users-grid');
+  grid.innerHTML = '<div class="spinner"></div>';
+  try {
+    const users = await supaFetch('internal_users?select=id,username,email,rol,activo,created_at,ultimo_acceso&order=created_at.asc');
+    grid.innerHTML = users.map(u => `
+      <div class="user-card">
+        <div class="user-card-header">
+          <div class="user-card-avatar">${u.username.charAt(0).toUpperCase()}</div>
+          <div class="user-card-info"><div class="user-card-name">${esc(u.username)}</div><div class="user-card-email">${esc(u.email)}</div></div>
+          <span class="badge ${u.rol==='admin'?'badge-juridica':'badge-fisica'}">${u.rol}</span>
+        </div>
+        <div class="user-card-meta">${u.activo?'🟢 Activo':'🔴 Inactivo'} · Último acceso: ${u.ultimo_acceso?formatDate(u.ultimo_acceso,true):'Nunca'}</div>
+        <div class="user-card-actions">
+          <button class="btn btn-sm btn-outline" onclick="resetPassword('${u.id}','${esc(u.username)}')">🔑 Reset contraseña</button>
+          ${u.id!==currentUser.id?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-success'}" onclick="toggleUserActivo('${u.id}',${u.activo})">${u.activo?'Deshabilitar':'Habilitar'}</button>`:'<span style="font-size:11px;color:var(--text-muted);align-self:center">(tu cuenta)</span>'}
+        </div>
+      </div>`).join('');
+  } catch(e) { grid.innerHTML = `<p style="color:var(--red)">Error: ${e.message}</p>`; }
+}
+
+function toggleAddUser() { document.getElementById('add-user-section').classList.toggle('open'); }
+
+async function createUser() {
+  const username = document.getElementById('nu-username').value.trim();
+  const email    = document.getElementById('nu-email').value.trim();
+  const pass     = document.getElementById('nu-pass').value;
+  const rol      = document.getElementById('nu-rol').value;
+  const errEl    = document.getElementById('user-error');
+  errEl.style.display = 'none';
+  if (!username||!email||!pass) { errEl.textContent='Completá todos los campos.'; errEl.style.display='block'; return; }
+  if (pass.length<8) { errEl.textContent='La contraseña debe tener al menos 8 caracteres.'; errEl.style.display='block'; return; }
+  try {
+    await rpc('create_internal_user',{ p_username:username, p_email:email, p_password:pass, p_rol:rol });
+    toast('Usuario creado correctamente.','success');
+    ['nu-username','nu-email','nu-pass'].forEach(id => document.getElementById(id).value='');
+    toggleAddUser(); loadUsuarios();
+  } catch(e) {
+    const m = e.message.toLowerCase();
+    errEl.textContent = 'Error: '+(m.includes('unique')||m.includes('duplicate')?'El usuario o email ya existe.':e.message);
+    errEl.style.display='block';
+  }
+}
+
+async function resetPassword(userId, username) {
+  const newPass = prompt(`Nueva contraseña para "${username}" (mínimo 8 caracteres):`);
+  if (!newPass) return;
+  if (newPass.length<8) { toast('Mínimo 8 caracteres.','error'); return; }
+  try { await rpc('reset_user_password',{ p_user_id:userId, p_new_password:newPass }); toast(`Contraseña de "${username}" actualizada.`,'success'); }
+  catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function toggleUserActivo(userId, activo) {
+  if (!confirm(`¿Confirmás ${activo?'deshabilitar':'habilitar'} este usuario?`)) return;
+  try {
+    await supaFetch(`internal_users?id=eq.${userId}`,{ method:'PATCH', body:JSON.stringify({ activo:!activo }) });
+    toast(`Usuario ${activo?'deshabilitado':'habilitado'}.`,'success'); loadUsuarios();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// HELPERS
+function esc(str) {
+  if (str===null||str===undefined) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatDate(iso, withTime=false) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const date = d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  if (!withTime) return date;
+  return `${date} ${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}hs`;
+}
+function fmtMonto(amount, moneda) {
+  return new Intl.NumberFormat('es-AR',{style:'currency',currency:moneda||'ARS',minimumFractionDigits:0}).format(amount);
+}
+function toast(msg, type='success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<span>${type==='success'?'✓':'✕'}</span> ${msg}`;
+  c.appendChild(t); setTimeout(()=>t.remove(),4000);
+}
+
+// Keyboard
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+// Restaurar sesión
+const saved = sessionStorage.getItem('lerner_session');
+if (saved) { try { currentUser=JSON.parse(saved); initApp(); } catch { sessionStorage.removeItem('lerner_session'); } }
+</script>
+</body>
+</html>
