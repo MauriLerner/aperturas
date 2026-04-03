@@ -310,24 +310,26 @@ async function rpc(fn, body={}) {
 }
 
 // ── SIGNED URLS via Edge Function ────────────────────────────
-async function getSignedUrl(rawUrl) {
+async function getSignedUrl(rawUrl, bucket) {
   if (!rawUrl) return null;
   try {
-    // Extraer bucket y path de la URL de Supabase Storage
-    // Formatos posibles:
-    // .../storage/v1/object/public/BUCKET/PATH
-    // .../storage/v1/object/authenticated/BUCKET/PATH
-    // .../storage/v1/object/sign/BUCKET/PATH
-    const match = rawUrl.match(/\/storage\/v1\/object\/(?:public|authenticated|sign)\/([^\/]+)\/(.+?)(?:\?|$)/);
-    if (!match) return null;
+    let resolvedBucket = bucket || 'selfies-kyc';
+    let resolvedPath = rawUrl;
 
-    const bucket = match[1];
-    const path = decodeURIComponent(match[2]);
+    // Si es URL completa de Supabase, extraer bucket y path
+    if (rawUrl.startsWith('http')) {
+      const match = rawUrl.match(/\/storage\/v1\/object\/(?:public|authenticated|sign)\/([^\/]+)\/(.+?)(?:\?|$)/);
+      if (match) {
+        resolvedBucket = match[1];
+        resolvedPath = decodeURIComponent(match[2]);
+      }
+    }
+    // Si es path relativo (ej: "fisica/LC-F-000010.jpg") se usa tal cual
 
     const res = await fetch(EDGE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPA_KEY}` },
-      body: JSON.stringify({ bucket, path })
+      body: JSON.stringify({ bucket: resolvedBucket, path: resolvedPath })
     });
     const data = await res.json();
     return data.signedUrl || null;
@@ -595,7 +597,7 @@ async function loadModalImages(s) {
       card.innerHTML = `<div class="img-card-label">${img.label}</div><div class="img-placeholder">📷<span>Sin imagen</span></div>`;
       return;
     }
-    const signedUrl = await getSignedUrl(img.url);
+    const signedUrl = await getSignedUrl(img.url, 'selfies-kyc');
     if (!signedUrl) {
       card.innerHTML = `<div class="img-card-label">${img.label}</div><div class="img-placeholder">⚠️<span>Error al cargar</span></div>`;
       return;
