@@ -106,6 +106,8 @@
   .badge-juridica{background:rgba(16,63,213,.2);color:#89b4ff;border:1px solid rgba(16,63,213,.4)}
   .badge-admin{background:rgba(103,186,228,.15);color:var(--sky);border:1px solid rgba(103,186,228,.3)}
   .badge-operador{background:rgba(244,244,244,.08);color:var(--text-dim);border:1px solid rgba(244,244,244,.15)}
+  .badge-rosval{background:rgba(168,85,247,.12);color:#c084fc;border:1px solid rgba(168,85,247,.25)}
+  .badge-falta_doc{background:rgba(251,146,60,.12);color:#fb923c;border:1px solid rgba(251,146,60,.25)}
   .empty-state{text-align:center;padding:70px 20px;color:var(--text-muted)}.empty-icon{font-size:36px;margin-bottom:12px;opacity:.5}
   .loading-cell{text-align:center;padding:50px !important;color:var(--text-muted)}
   .pagination{display:flex;gap:6px;align-items:center;justify-content:flex-end;padding:14px 18px;border-top:1px solid var(--border2)}
@@ -616,9 +618,11 @@ function buildModalBodyBase(s, tipo) {
       <div class="status-row">
         <div class="field"><label>Cambiar a</label>
           <select id="new-estado">
-            <option value="pendiente" ${(s.estado||'').toLowerCase()==='pendiente'?'selected':''}>Pendiente</option>
-            <option value="activa"    ${(s.estado||'').toLowerCase()==='activa'   ?'selected':''}>Activa</option>
-            <option value="rechazada" ${(s.estado||'').toLowerCase()==='rechazada'?'selected':''}>Rechazada</option>
+            <option value="pendiente"  ${(s.estado||'').toLowerCase()==='pendiente' ?'selected':''}>Pendiente</option>
+            <option value="activa"     ${(s.estado||'').toLowerCase()==='activa'    ?'selected':''}>Activa</option>
+            <option value="rechazada"  ${(s.estado||'').toLowerCase()==='rechazada' ?'selected':''}>Rechazada</option>
+            <option value="rosval"     ${(s.estado||'').toLowerCase()==='rosval'    ?'selected':''}>Rosval</option>
+            <option value="falta_doc"  ${(s.estado||'').toLowerCase()==='falta_doc' ?'selected':''}>Falta documentación</option>
           </select>
         </div>
         <div class="field" style="flex:2"><label>Observaciones (opcional)</label><input type="text" id="obs-estado" placeholder="Motivo o comentario..."></div>
@@ -697,9 +701,16 @@ async function cambiarEstado(id, tipo, estadoAnterior) {
   const table = tipo==='fisica' ? 'solicitudes_fisica' : 'solicitudes_juridica';
   try {
     await supaFetch(`${table}?id=eq.${id}`, { method:'PATCH', body: JSON.stringify({ estado: nuevoEstado }) });
+    // Obtener nombre y referencia del solicitante para el log
+    const tableLog = tipo==='fisica' ? 'solicitudes_fisica' : 'solicitudes_juridica';
+    const solInfo = await supaFetch(`${tableLog}?id=eq.${id}&select=numero_referencia,nombre,apellido,razon_social`).catch(()=>[]);
+    const solNombre = solInfo[0] ? (tipo==='fisica' ? `${solInfo[0].nombre} ${solInfo[0].apellido}` : solInfo[0].razon_social) : '';
+    const solRef = solInfo[0]?.numero_referencia || '';
+
     await supaFetch('account_status_log', { method:'POST', body: JSON.stringify({
       solicitud_id:id, tipo_solicitud:tipo, estado_anterior:estadoAnterior, estado_nuevo:nuevoEstado,
-      usuario_id:currentUser.id, username:currentUser.username, observaciones:obs||null
+      usuario_id:currentUser.id, username:currentUser.username, observaciones:obs||null,
+      nombre_solicitante:solNombre, numero_referencia:solRef
     }) });
     const idx = allSolicitudes.findIndex(s => s.id===id);
     if (idx>=0) allSolicitudes[idx].estado = nuevoEstado;
@@ -724,9 +735,9 @@ async function loadLog() {
       <div class="log-item">
         <div class="log-dot" style="background:${colors[r.estado_nuevo]||'var(--text-muted)'}"></div>
         <div class="log-info">
-          <div class="log-main"><strong>${esc(r.username)}</strong> cambió <span class="badge badge-${r.estado_anterior}">${r.estado_anterior}</span> → <span class="badge badge-${r.estado_nuevo}">${r.estado_nuevo}</span> <span style="color:var(--text-muted);font-size:11px">(${r.tipo_solicitud})</span></div>
+          <div class="log-main"><strong>${esc(r.username)}</strong> cambió <span class="badge badge-${r.estado_anterior}">${r.estado_anterior}</span> → <span class="badge badge-${r.estado_nuevo}">${r.estado_nuevo}</span></div>
+          <div class="log-sub">${r.nombre_solicitante ? `👤 ${esc(r.nombre_solicitante)}` : ''} ${r.numero_referencia ? `<span style="font-family:monospace;font-size:10px;margin-left:6px">${esc(r.numero_referencia)}</span>` : ''} <span style="color:var(--text-muted);font-size:10px;margin-left:4px">(${r.tipo_solicitud})</span></div>
           ${r.observaciones?`<div class="log-sub">💬 ${esc(r.observaciones)}</div>`:''}
-          <div class="log-sub" style="font-family:monospace;font-size:10px">${r.solicitud_id}</div>
         </div>
         <div class="log-time">${formatDate(r.created_at,true)}</div>
       </div>`).join('');
@@ -748,8 +759,14 @@ async function loadUsuarios() {
         </div>
         <div style="font-size:11px;color:var(--text-muted)">${u.activo?'🟢 Activo':'🔴 Inactivo'} · Último: ${u.ultimo_acceso?formatDate(u.ultimo_acceso,true):'Nunca'}</div>
         <div class="user-card-actions">
-          <button class="btn btn-sm btn-outline" onclick="resetPassword('${u.id}','${esc(u.username)}')">🔑 Reset contraseña</button>
-          ${u.id!==currentUser.id?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-success'}" onclick="toggleUserActivo('${u.id}',${u.activo})">${u.activo?'Deshabilitar':'Habilitar'}</button>`:'<span style="font-size:11px;color:var(--text-muted)">(tu cuenta)</span>'}
+          <button class="btn btn-sm btn-outline" onclick="resetPassword('${u.id}','${esc(u.username)}')">🔑 Reset</button>
+          <button class="btn btn-sm btn-outline" onclick="cambiarRol('${u.id}','${u.rol}','${esc(u.username)}')" ${u.id===currentUser.id?'disabled title="No podés cambiar tu propio rol"':''}>
+            ${u.rol==='admin'?'→ Operador':'→ Admin'}
+          </button>
+          ${u.id!==currentUser.id?`
+            <button class="btn btn-sm ${u.activo?'btn-danger':'btn-success'}" onclick="toggleUserActivo('${u.id}',${u.activo})">${u.activo?'Deshabilitar':'Habilitar'}</button>
+            <button class="btn btn-sm btn-danger" onclick="eliminarUsuario('${u.id}','${esc(u.username)}')" title="Eliminar usuario permanentemente">🗑</button>
+          `:'<span style="font-size:11px;color:var(--text-muted)">(tu cuenta)</span>'}
         </div>
       </div>`).join('');
   } catch(e) { grid.innerHTML=`<p style="color:var(--red)">Error: ${e.message}</p>`; }
@@ -777,6 +794,26 @@ async function resetPassword(userId, username) {
   if (newPass.length<8) { toast('Mínimo 8 caracteres.','error'); return; }
   try { await rpc('reset_user_password',{p_user_id:userId,p_new_password:newPass}); toast(`Contraseña de ${username} actualizada.`,'success'); }
   catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function cambiarRol(userId, rolActual, username) {
+  const nuevoRol = rolActual === 'admin' ? 'operador' : 'admin';
+  if (!confirm(`¿Cambiar rol de "${username}" de ${rolActual} a ${nuevoRol}?`)) return;
+  try {
+    await supaFetch(`internal_users?id=eq.${userId}`, { method:'PATCH', body: JSON.stringify({ rol: nuevoRol }) });
+    toast(`Rol de ${username} cambiado a ${nuevoRol}.`, 'success');
+    loadUsuarios();
+  } catch(e) { toast('Error: '+e.message, 'error'); }
+}
+
+async function eliminarUsuario(userId, username) {
+  if (!confirm(`⚠️ ¿Eliminar permanentemente al usuario "${username}"? Esta acción no se puede deshacer.`)) return;
+  if (!confirm(`Confirmación final: ¿eliminar a "${username}"?`)) return;
+  try {
+    await supaFetch(`internal_users?id=eq.${userId}`, { method:'DELETE' });
+    toast(`Usuario ${username} eliminado.`, 'success');
+    loadUsuarios();
+  } catch(e) { toast('Error: '+e.message, 'error'); }
 }
 
 async function toggleUserActivo(userId, activo) {
