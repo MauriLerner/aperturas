@@ -170,10 +170,11 @@
 
   /* DESCARGA IMÁGENES */
   .img-download-btn {
-    display:block; text-align:center; padding:6px 8px;
+    display:block; width:100%; text-align:center; padding:6px 8px;
     background:rgba(103,186,228,0.12); color:var(--sky);
     font-size:11px; font-weight:500; text-decoration:none;
-    border-top:1px solid rgba(103,186,228,0.15);
+    border:none; border-top:1px solid rgba(103,186,228,0.15);
+    cursor:pointer; font-family:var(--font);
     transition:background .15s;
   }
   .img-download-btn:hover { background:rgba(103,186,228,0.22); }
@@ -360,6 +361,26 @@ async function getSignedUrl(rawUrl, bucket) {
   } catch(e) {
     console.error('Error obteniendo URL firmada:', e);
     return null;
+  }
+}
+
+// ── DESCARGA DE ARCHIVOS ─────────────────────────────────────
+// El atributo download no funciona cross-origin, hay que hacer fetch+blob
+async function downloadFile(url, filename) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Error al descargar');
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+  } catch(e) {
+    toast('Error al descargar: ' + e.message, 'error');
   }
 }
 
@@ -633,7 +654,7 @@ async function loadModalImages(s) {
     card.innerHTML = `
       <div class="img-card-label">${img.label}</div>
       <img src="${signedUrl}" alt="${img.label}" onclick="window.open('${signedUrl}','_blank')" title="Click para ampliar">
-      <a class="img-download-btn" href="${signedUrl}" download="${img.filename}" title="Descargar">⬇ Descargar</a>`;
+      <button class="img-download-btn" onclick="downloadFile('${signedUrl}','${img.filename}')">⬇ Descargar</button>`;
   }));
 }
 
@@ -656,14 +677,14 @@ async function loadPdfDownload(s) {
     }
     const pdfName = pdfPath.split('/').pop();
     row.innerHTML = `
-      <a class="pdf-btn" href="${signedUrl}" download="${pdfName}" target="_blank">
+      <div class="pdf-btn" onclick="downloadFile('${signedUrl}','${pdfName}')">
         <span class="pdf-btn-icon">📄</span>
         <span class="pdf-btn-info">
           <span class="pdf-btn-label">Formulario de apertura</span>
           <span class="pdf-btn-name">${pdfName}</span>
         </span>
         <span style="margin-left:auto;color:var(--sky);font-size:13px">⬇ Descargar</span>
-      </a>`;
+      </div>`;
   } catch(e) {
     row.innerHTML = `<div style="font-size:12px;color:var(--text-muted)">📄 Sin formulario PDF disponible</div>`;
   }
